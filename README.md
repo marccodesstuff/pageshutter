@@ -10,7 +10,6 @@
 
 A custom [Notion Worker](https://www.notion.so/) that gives your Notion AI Agent the ability to **take screenshots of any website** and return a shareable image link — all from a simple chat command.
 
----
 ## ⚠️ Beta Notice
 
 **Notion Custom Agents** and the **Notion Worker SDK** are currently in beta and subject to change. This tool is not recommended for production environments. Always test thoroughly before relying on this in critical workflows.
@@ -30,8 +29,6 @@ Behind the scenes, this tool:
 4. Returns a public link to the screenshot image, right back into your Notion conversation.
 
 No browser extensions, no manual screenshots — just ask and receive.
-
----
 
 ## How It Works (The Simple Version)
 
@@ -58,8 +55,6 @@ Before you can deploy and use this tool, you'll need:
 | **`ntn` CLI** | Notion's command-line tool for managing workers | `npm i -g ntn` |
 | **BrowserStack Account** | Cloud service that renders the screenshots | [browserstack.com](https://www.browserstack.com/) |
 | **BrowserStack Credentials** | A username and access key from your BrowserStack account | [BrowserStack Settings](https://www.browserstack.com/accounts/settings) |
-
----
 
 ## Setup Guide
 
@@ -112,8 +107,6 @@ Once deployed and attached to your agent, just chat with it naturally:
 
 The agent will respond with a link to the screenshot image.
 
----
-
 ## Project Structure
 
 ```
@@ -124,8 +117,6 @@ The agent will respond with a link to the screenshot image.
 └── .agents/
     └── INSTRUCTIONS.md # Guidelines for AI coding assistants
 ```
-
----
 
 ## Local Development
 
@@ -157,8 +148,6 @@ ntn workers runs list
 ntn workers runs logs <runId>
 ```
 
----
-
 ## Troubleshooting
 
 | Problem | Solution |
@@ -168,15 +157,11 @@ ntn workers runs logs <runId>
 | **"Failed to create BrowserStack job"** | Double-check your credentials are correct. You can verify them at [browserstack.com/accounts/settings](https://www.browserstack.com/accounts/settings). |
 | **Deploy fails** | Ensure you're logged in (`ntn login`) and have the latest CLI (`npm i -g ntn`). |
 
----
-
 ## Built With
 
 - [Notion Workers SDK](https://www.notion.so/) — framework for building Notion Agent tools
 - [BrowserStack Screenshots API](https://www.browserstack.com/docs/screenshots/api) — cloud-based website screenshot service
 - [TypeScript](https://www.typescriptlang.org/) — type-safe JavaScript
-
----
 
 ## License
 

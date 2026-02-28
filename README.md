@@ -8,7 +8,7 @@
 
 ---
 
-A custom [Notion Worker](https://www.notion.so/) that gives your Notion AI Agent the ability to **take screenshots of any website** and return a shareable image link — all from a simple chat command.
+A custom [Notion Worker](https://www.notion.so/) that gives your Notion AI Custom Agent the ability to **take screenshots of any website** and return a shareable image link — all from a simple chat command.
 
 ## ⚠️ Beta Notice
 
@@ -17,7 +17,7 @@ A custom [Notion Worker](https://www.notion.so/) that gives your Notion AI Agent
 
 ## What Does This Do?
 
-Imagine asking your Notion AI Agent:
+Imagine asking your Notion AI Custom Agent:
 
 > "Take a screenshot of https://example.com"
 
@@ -33,7 +33,7 @@ No browser extensions, no manual screenshots — just ask and receive.
 ## How It Works (The Simple Version)
 
 ```
-You (in Notion) ──► Notion AI Agent ──► This Tool ──► BrowserStack ──► Screenshot URL
+You (in Notion) ──► Notion AI Custom Agent ──► This Tool ──► BrowserStack ──► Screenshot URL
 ```
 
 1. **You** type a message in Notion asking the agent to capture a screenshot.

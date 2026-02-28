@@ -8,7 +8,7 @@ Common questions about the Screenshot Capture Tool.
 
 ### What is this tool?
 
-A **Notion Worker** — a small TypeScript program that runs in Notion's infrastructure. It gives your Notion AI Agent the ability to take screenshots of websites and return the image URLs.
+A **Notion Worker** — a small TypeScript program that runs in Notion's infrastructure. It gives your Notion AI Custom Agent the ability to take screenshots of websites and return the image URLs.
 
 ### How much does it cost?
 

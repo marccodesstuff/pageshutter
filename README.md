@@ -1,4 +1,10 @@
-# PageShutter - A Screenshot Capture Tool for Notion Agents
+<div align="center">
+  # PageShutter
+  
+  A Screenshot Capture Tool for Notion Agents
+</div>
+
+---
 
 A custom [Notion Worker](https://www.notion.so/) that gives your Notion AI Agent the ability to **take screenshots of any website** and return a shareable image link — all from a simple chat command.
 

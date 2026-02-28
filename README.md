@@ -3,6 +3,10 @@
 A custom [Notion Worker](https://www.notion.so/) that gives your Notion AI Agent the ability to **take screenshots of any website** and return a shareable image link — all from a simple chat command.
 
 ---
+## ⚠️ Beta Notice
+
+**Notion Custom Agents** and the **Notion Worker SDK** are currently in beta and subject to change. This tool is not recommended for production environments. Always test thoroughly before relying on this in critical workflows.
+
 
 ## What Does This Do?
 

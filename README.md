@@ -1,322 +1,171 @@
-# Notion Workers [alpha]
+# Screenshot Capture Tool for Notion Agents
 
-A worker is a small Node/TypeScript program hosted by Notion that you can use
-to build tool calls for Notion custom agents.
+A custom [Notion Worker](https://www.notion.so/) that gives your Notion AI Agent the ability to **take screenshots of any website** and return a shareable image link — all from a simple chat command.
 
-> [!WARNING]
->
-> This is an **extreme pre-release alpha** of Notion Workers. You probably
-> shouldn't use it for anything serious just yet. Also, it'll only be helpful
-> if you have access to Notion Custom Agents (and a workspace admin [opts in](https://www.notion.so/?target=ai)). We are still making breaking
-> changes to Notion Workers CLI, templates, and more. We aim to minimize
-> friction, but expect things to go wrong.
+---
 
-## Quick Start
+## What Does This Do?
 
-Install the `ntn` CLI:
+Imagine asking your Notion AI Agent:
+
+> "Take a screenshot of https://example.com"
+
+Behind the scenes, this tool:
+
+1. Receives the website URL from the agent.
+2. Sends the URL to [BrowserStack](https://www.browserstack.com/) (a cloud browser service) to render the page in a real Chrome browser.
+3. Waits for the screenshot to finish processing.
+4. Returns a public link to the screenshot image, right back into your Notion conversation.
+
+No browser extensions, no manual screenshots — just ask and receive.
+
+---
+
+## How It Works (The Simple Version)
+
+```
+You (in Notion) ──► Notion AI Agent ──► This Tool ──► BrowserStack ──► Screenshot URL
+```
+
+1. **You** type a message in Notion asking the agent to capture a screenshot.
+2. **The Notion Agent** recognizes your request and calls this tool with the URL.
+3. **This tool** talks to the BrowserStack Screenshots API to render the page.
+4. **BrowserStack** opens the URL in a real Chrome browser on Windows 11, takes a screenshot, and hosts the image.
+5. **The tool** returns the image link to the agent, which shares it with you.
+
+---
+
+## Prerequisites
+
+Before you can deploy and use this tool, you'll need:
+
+| Requirement | What It Is | Where to Get It |
+|---|---|---|
+| **Notion Workspace** | A Notion account with AI Agent access | [notion.so](https://www.notion.so/) |
+| **Node.js** (v22+) | JavaScript runtime to build and deploy the tool | [nodejs.org](https://nodejs.org/) |
+| **`ntn` CLI** | Notion's command-line tool for managing workers | `npm i -g ntn` |
+| **BrowserStack Account** | Cloud service that renders the screenshots | [browserstack.com](https://www.browserstack.com/) |
+| **BrowserStack Credentials** | A username and access key from your BrowserStack account | [BrowserStack Settings](https://www.browserstack.com/accounts/settings) |
+
+---
+
+## Setup Guide
+
+### 1. Install Dependencies
 
 ```shell
-npm i -g ntn
+npm install
 ```
 
-Scaffold a new worker:
+### 2. Log in to Notion
 
 ```shell
-ntn workers new
-# Follow the prompts to scaffold your worker
-cd my-worker
-```
-
-You'll find a `Hello, world` example in `src/index.ts`:
-
-```ts
-import { Worker } from "@notionhq/workers";
-
-const worker = new Worker();
-export default worker;
-
-worker.tool("sayHello", {
-	title: "Say Hello",
-	description: "Returns a friendly greeting for the given name.",
-	schema: {
-		type: "object",
-		properties: {
-			name: { type: "string", description: "The name to greet." },
-		},
-		required: ["name"],
-		additionalProperties: false,
-	},
-	execute: ({ name }) => `Hello, ${name}!`,
-});
-```
-
-Deploy your worker:
-
-```shell
-ntn workers deploy
-```
-
-In Notion, add the tool call to your agent:
-
-![Adding a custom tool to your Notion agent](docs/custom-tool.png)
-
-## Authentication & Secrets
-
-If your worker needs to access third-party systems, use secrets for API keys and OAuth for user authorization flows.
-
-### Secrets
-
-Store API keys and credentials with the `secrets` command:
-
-```shell
-ntn workers env set TWILIO_AUTH_TOKEN=your-token-here
-ntn workers env set OPENWEATHER_API_KEY=abc123
-```
-
-For local development, pull the secrets to a `.env` file:
-
-```shell
-ntn workers env pull
-```
-
-Access them in your code via `process.env`:
-
-```ts
-const apiKey = process.env.OPENWEATHER_API_KEY;
-```
-
-### OAuth
-
-For services requiring user authorization (GitHub, Google, etc.), set up OAuth:
-
-```ts
-worker.oauth("githubAuth", {
-	name: "github-oauth",
-	authorizationEndpoint: "https://github.com/login/oauth/authorize",
-	tokenEndpoint: "https://github.com/login/oauth/access_token",
-	scope: "repo user",
-	clientId: process.env.GITHUB_CLIENT_ID ?? "",
-	clientSecret: process.env.GITHUB_CLIENT_SECRET ?? "",
-});
-```
-
-After deploying, get your redirect URL and add it to your OAuth provider's app settings:
-
-```shell
-ntn workers oauth show-redirect-url
-```
-
-Then start the OAuth flow:
-
-```shell
-ntn workers oauth start githubAuth
-```
-
-Use the token in your tools:
-
-```ts
-worker.tool("getGitHubRepos", {
-	title: "Get GitHub Repos",
-	description: "Fetch user's GitHub repositories",
-	schema: {
-		type: "object",
-		properties: {},
-		additionalProperties: false,
-	},
-	execute: async () => {
-		const token = await githubAuth.accessToken();
-		const response = await fetch("https://api.github.com/user/repos", {
-			headers: { Authorization: `Bearer ${token}` },
-		});
-		return response.json();
-	},
-});
-```
-
-## What you can build
-
-<details open>
-<summary><strong>Give Agents a phone with Twilio</strong></summary>
-
-```ts
-worker.tool("sendSMS", {
-	title: "Send SMS",
-	description: "Send a text message to a phone number",
-	schema: {
-		type: "object",
-		properties: {
-			to: { type: "string", description: "Phone number in E.164 format" },
-			message: { type: "string", description: "Message to send" },
-		},
-		required: ["to", "message"],
-		additionalProperties: false,
-	},
-	execute: async ({ to, message }) => {
-		const response = await fetch(
-			`https://api.twilio.com/2010-04-01/Accounts/${process.env.TWILIO_ACCOUNT_SID}/Messages.json`,
-			{
-				method: "POST",
-				headers: {
-					Authorization: `Basic ${Buffer.from(
-						`${process.env.TWILIO_ACCOUNT_SID}:${process.env.TWILIO_AUTH_TOKEN}`,
-					).toString("base64")}`,
-					"Content-Type": "application/x-www-form-urlencoded",
-				},
-				body: new URLSearchParams({
-					To: to,
-					From: process.env.TWILIO_PHONE_NUMBER ?? "",
-					Body: message,
-				}),
-			},
-		);
-
-		if (!response.ok) throw new Error(`Twilio API error: ${response.statusText}`);
-		return "Message sent successfully";
-	},
-});
-```
-
-</details>
-
-<details>
-<summary><strong>Post to Discord, WhatsApp, and Teams</strong></summary>
-
-```ts
-worker.tool("postToDiscord", {
-	title: "Post to Discord",
-	description: "Send a message to a Discord channel",
-	schema: {
-		type: "object",
-		properties: {
-			message: { type: "string", description: "Message to post" },
-		},
-		required: ["message"],
-		additionalProperties: false,
-	},
-	execute: async ({ message }) => {
-		const response = await fetch(process.env.DISCORD_WEBHOOK_URL ?? "", {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ content: message }),
-		});
-
-		if (!response.ok) throw new Error(`Discord API error: ${response.statusText}`);
-		return "Posted to Discord";
-	},
-});
-```
-
-</details>
-
-<details>
-<summary><strong>Turn a Notion Page into a Podcast with ElevenLabs</strong></summary>
-
-```ts
-worker.tool("createPodcast", {
-	title: "Create Podcast from Page",
-	description: "Convert page content to audio using ElevenLabs",
-	schema: {
-		type: "object",
-		properties: {
-			content: { type: "string", description: "Page content to convert" },
-			voiceId: { type: "string", description: "ElevenLabs voice ID" },
-		},
-		required: ["content", "voiceId"],
-		additionalProperties: false,
-	},
-	execute: async ({ content, voiceId }) => {
-		const response = await fetch(
-			`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
-			{
-				method: "POST",
-				headers: {
-					"xi-api-key": process.env.ELEVENLABS_API_KEY ?? "",
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify({ text: content, model_id: "eleven_monolingual_v1" }),
-			},
-		);
-
-		if (!response.ok) throw new Error(`ElevenLabs API error: ${response.statusText}`);
-		const audioBuffer = await response.arrayBuffer();
-		return `Generated ${audioBuffer.byteLength} bytes of audio`;
-	},
-});
-```
-
-</details>
-
-<details>
-<summary><strong>Get live stocks, weather, and traffic</strong></summary>
-
-```ts
-worker.tool("getWeather", {
-	title: "Get Weather",
-	description: "Get current weather for a location",
-	schema: {
-		type: "object",
-		properties: {
-			location: { type: "string", description: "City name or zip code" },
-		},
-		required: ["location"],
-		additionalProperties: false,
-	},
-	execute: async ({ location }) => {
-		const response = await fetch(
-			`https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(location)}&appid=${process.env.OPENWEATHER_API_KEY}&units=metric`,
-		);
-
-		if (!response.ok) throw new Error(`Weather API error: ${response.statusText}`);
-
-		const data = await response.json();
-		return `${data.name}: ${data.main.temp}°C, ${data.weather[0].description}`;
-	},
-});
-```
-</details>
-
-## Helpful CLI commands
-
-```shell
-# Deploy your worker to Notion
-ntn workers deploy
-
-# Test a tool locally
-ntn workers exec <toolName>
-
-# Manage authentication
 ntn login
-ntn logout
-
-# Store API keys and secrets
-ntn workers env set API_KEY=your-secret
-
-# View execution logs
-ntn workers runs logs <runId>
-
-# Start OAuth flow
-ntn workers oauth start <oauthName>
-
-# Show OAuth redirect URL (set this in your provider's app settings)
-ntn workers oauth show-redirect-url
-
-# Display help for all commands
-ntn --help
 ```
+
+Follow the prompts to connect to your Notion workspace.
+
+### 3. Store Your BrowserStack Credentials
+
+These are kept secret and secure — they are **not** stored in the code.
+
+```shell
+ntn workers env set BROWSERSTACK_USERNAME=your_username_here
+ntn workers env set BROWSERSTACK_ACCESS_KEY=your_access_key_here
+```
+
+> **Where do I find these?** Log in to [BrowserStack](https://www.browserstack.com/accounts/settings) and look for your **Username** and **Access Key** on the settings page.
+
+### 4. Deploy the Tool
+
+```shell
+ntn workers deploy
+```
+
+This uploads the tool to Notion so your AI Agent can use it.
+
+### 5. Add the Tool to Your Agent
+
+In Notion, open your custom agent's settings and add the **Capture Screenshot** tool to its list of available tools.
+
+---
+
+## Usage
+
+Once deployed and attached to your agent, just chat with it naturally:
+
+- *"Take a screenshot of https://github.com"*
+- *"Capture what https://news.ycombinator.com looks like right now"*
+- *"Screenshot this page: https://www.notion.so"*
+
+The agent will respond with a link to the screenshot image.
+
+---
+
+## Project Structure
+
+```
+├── src/
+│   └── index.ts        # The main tool code — this is where the magic happens
+├── package.json        # Project metadata and dependencies
+├── tsconfig.json       # TypeScript compiler settings
+└── .agents/
+    └── INSTRUCTIONS.md # Guidelines for AI coding assistants
+```
+
+---
 
 ## Local Development
 
-```shell
-npm run check # type-check
-npm run build # emit dist/
-```
-
-Store secrets in `.env` for local development:
+If you want to test changes locally before deploying:
 
 ```shell
+# Pull your secrets into a local .env file
 ntn workers env pull
+
+# Type-check your code (catches errors without deploying)
+npm run check
+
+# Build the project
+npm run build
+
+# Test the tool locally
+ntn workers exec captureScreenshot --local -d '{"url": "https://example.com"}'
 ```
 
-## Have a question?
+### Viewing Logs
 
-Join the [Notion Dev Slack](https://join.slack.com/t/notiondevs/shared_invite/zt-3r1aq1t1s-hM2har7iqfOfHJRrH9PHww)!
+After a run (local or deployed), you can inspect what happened:
+
+```shell
+# List recent runs
+ntn workers runs list
+
+# View logs for a specific run
+ntn workers runs logs <runId>
+```
+
+---
+
+## Troubleshooting
+
+| Problem | Solution |
+|---|---|
+| **"Missing BrowserStack credentials"** | Make sure you ran `ntn workers env set` for both `BROWSERSTACK_USERNAME` and `BROWSERSTACK_ACCESS_KEY`. |
+| **Screenshot job times out** | The target website may be slow to load, or BrowserStack may be experiencing delays. Try again. |
+| **"Failed to create BrowserStack job"** | Double-check your credentials are correct. You can verify them at [browserstack.com/accounts/settings](https://www.browserstack.com/accounts/settings). |
+| **Deploy fails** | Ensure you're logged in (`ntn login`) and have the latest CLI (`npm i -g ntn`). |
+
+---
+
+## Built With
+
+- [Notion Workers SDK](https://www.notion.so/) — framework for building Notion Agent tools
+- [BrowserStack Screenshots API](https://www.browserstack.com/docs/screenshots/api) — cloud-based website screenshot service
+- [TypeScript](https://www.typescriptlang.org/) — type-safe JavaScript
+
+---
+
+## License
+
+This project is licensed under the MIT License — see [LICENSE.md](LICENSE.md) for details.

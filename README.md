@@ -1,4 +1,6 @@
 <div align="center">
+  <img src="assets/app-logo.png" alt="PageShutter Icon" width="120" />
+  
   # PageShutter
   
   A Screenshot Capture Tool for Notion Agents

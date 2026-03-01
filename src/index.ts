@@ -1,4 +1,5 @@
 import { Worker } from "@notionhq/workers";
+import sharp from "sharp";
 
 const worker = new Worker();
 export default worker;
@@ -6,6 +7,14 @@ export default worker;
 // --- Types ---
 
 type CaptureScreenshotInput = { url: string };
+
+type CropImageInput = {
+	imageUrl: string;
+	x: number;
+	y: number;
+	width: number;
+	height: number;
+};
 
 interface BrowserStackJobResponse {
 	job_id: string;
@@ -149,6 +158,78 @@ worker.tool<CaptureScreenshotInput, string>("captureScreenshot", {
 			const message = error instanceof Error ? error.message : String(error);
 			console.error(`[captureScreenshot] Error: ${message}`);
 			throw new Error(`Screenshot capture failed: ${message}`);
+		}
+	},
+});
+
+// --- Crop Tool ---
+
+worker.tool<CropImageInput, string>("cropImage", {
+	title: "Crop Image",
+	description:
+		"Crops an image to the specified region by coordinates. Accepts an image URL and crop dimensions (x, y, width, height) to extract the desired portion of the image.",
+	schema: {
+		type: "object",
+		properties: {
+			imageUrl: {
+				type: "string",
+				description: "The URL of the image to crop.",
+			},
+			x: {
+				type: "number",
+				description: "The x-coordinate (left offset) in pixels where the crop region starts.",
+			},
+			y: {
+				type: "number",
+				description: "The y-coordinate (top offset) in pixels where the crop region starts.",
+			},
+			width: {
+				type: "number",
+				description: "The width in pixels of the crop region.",
+			},
+			height: {
+				type: "number",
+				description: "The height in pixels of the crop region.",
+			},
+		},
+		required: ["imageUrl", "x", "y", "width", "height"],
+		additionalProperties: false,
+	},
+	execute: async ({ imageUrl, x, y, width, height }) => {
+		try {
+			console.log(
+				`[cropImage] Cropping image from URL. Region: x=${x}, y=${y}, width=${width}, height=${height}`,
+			);
+
+			// Fetch the image
+			const imageResponse = await fetch(imageUrl);
+			if (!imageResponse.ok) {
+				throw new Error(`Failed to fetch image (HTTP ${imageResponse.status})`);
+			}
+
+			const imageBuffer = await imageResponse.arrayBuffer();
+			console.log(`[cropImage] Image fetched successfully. Size: ${imageBuffer.byteLength} bytes`);
+
+			// Crop the image using sharp
+			const croppedBuffer = await sharp(Buffer.from(imageBuffer))
+				.extract({
+					left: Math.round(x),
+					top: Math.round(y),
+					width: Math.round(width),
+					height: Math.round(height),
+				})
+				.toBuffer();
+
+			// Convert to base64 data URL
+			const base64Image = croppedBuffer.toString("base64");
+			const dataUrl = `data:image/png;base64,${base64Image}`;
+
+			console.log(`[cropImage] Image cropped successfully. Output size: ${croppedBuffer.byteLength} bytes`);
+			return `Successfully cropped image. The cropped image (base64 encoded) is ready for use: ${dataUrl}`;
+		} catch (error) {
+			const message = error instanceof Error ? error.message : String(error);
+			console.error(`[cropImage] Error: ${message}`);
+			throw new Error(`Image crop failed: ${message}`);
 		}
 	},
 });

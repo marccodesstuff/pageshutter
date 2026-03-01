@@ -44,6 +44,24 @@ You (in Notion) ──► Notion AI Custom Agent ──► This Tool ──► B
 
 ---
 
+## Features
+
+This worker provides two powerful tools:
+
+### 1. **Capture Screenshot** 📸
+- Takes any website URL and captures a high-quality screenshot
+- Renders the page in a real Chrome browser on Windows 11
+- Returns a public image URL you can view and share
+- Perfect for archiving, comparing, or presenting web content
+
+### 2. **Crop Image** 🔍
+- Crops captured screenshots or any image URL to focus on specific regions
+- Accepts pixel coordinates (x, y) and dimensions (width, height)
+- Returns the cropped image as a base64-encoded data URL
+- Sizing determined in your agent instructions for flexible, dynamic cropping
+
+---
+
 ## Prerequisites
 
 Before you can deploy and use this tool, you'll need:
@@ -101,11 +119,20 @@ In Notion, open your custom agent's settings and add the **Capture Screenshot** 
 
 Once deployed and attached to your agent, just chat with it naturally:
 
+### Screenshot Tool
 - *"Take a screenshot of https://github.com"*
 - *"Capture what https://news.ycombinator.com looks like right now"*
 - *"Screenshot this page: https://www.notion.so"*
 
 The agent will respond with a link to the screenshot image.
+
+### Crop Tool
+After capturing a screenshot, you can crop it to focus on a specific region:
+
+- *"Crop the screenshot to just the header area (x=0, y=0, width=1200, height=100)"*
+- *"Show me just the main content area (x=200, y=150, width=800, height=600)"*
+
+The crop tool takes the image URL and pixel coordinates to extract the desired region. You can specify crop dimensions directly in your agent instructions.
 
 ## Project Structure
 
@@ -132,8 +159,11 @@ npm run check
 # Build the project
 npm run build
 
-# Test the tool locally
+# Test the screenshot tool locally
 ntn workers exec captureScreenshot --local -d '{"url": "https://example.com"}'
+
+# Test the crop tool locally (with a sample image URL and crop region)
+ntn workers exec cropImage --local -d '{"imageUrl": "https://via.placeholder.com/1200x800", "x": 0, "y": 0, "width": 600, "height": 400}'
 ```
 
 ### Viewing Logs
@@ -161,6 +191,7 @@ ntn workers runs logs <runId>
 
 - [Notion Workers SDK](https://www.notion.so/) — framework for building Notion Agent tools
 - [BrowserStack Screenshots API](https://www.browserstack.com/docs/screenshots/api) — cloud-based website screenshot service
+- [Sharp](https://sharp.pixelplumbing.com/) — high-performance image processing library for Node.js
 - [TypeScript](https://www.typescriptlang.org/) — type-safe JavaScript
 
 ## License
